@@ -2,7 +2,7 @@ import { request } from "./api.js";
 
 // YA IMPLEMENTADO — ejemplo de uso de request()
 // Respuesta: { data: [ { id, nombre }, ... ] }
-export const listarCategorias = () => request("/categorias");
+export const listarCategorias = () => request('/categorias'); // Get /categorias 
 
 /**
  * TODO [F1] Funciones de acceso a la API de equipos.
@@ -11,16 +11,18 @@ export const listarCategorias = () => request("/categorias");
 
 // GET /equipos?page=<pagina>&per_page=<porPagina>
 // Respuesta: { data: [...], links: {...}, meta: { current_page, last_page, from, to, total, ... } }
-export const listarEquipos = (pagina = 1, porPagina = 6) => {
-  // TODO
-};
+export function listarEquipos({ page = 1, per_page = 6, q = '', estado = '' } = {}) {
+  const parametros = new URLSearchParams({ page, per_page });
+  if (q) parametros.set('q', q);
+  if (estado) parametros.set('estado', estado);
+  return request(`/equipos?${parametros}`);
+}
 
 // POST /equipos   -> 201 con el equipo creado | 422 con { message, errors }
-export const crearEquipo = (datos) => {
-  // TODO
-};
+export const crearEquipo = (datos) => request('/equipos', { method: 'POST', body: datos });
+
 
 // DELETE /equipos/<id>   -> 204 | 404 | 409 con { mensaje, codigo }
-export const eliminarEquipo = (id) => {
-  // TODO
-};
+export const eliminarEquipo = (id) => request(`/equipos/${id}`, { method: 'DELETE' });
+
+

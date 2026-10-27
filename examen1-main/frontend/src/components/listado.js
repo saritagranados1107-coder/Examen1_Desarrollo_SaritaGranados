@@ -1,63 +1,77 @@
-import { listarEquipos, eliminarEquipo } from "../modules/equipos.js";
-import { mostrarMensaje } from "./mensajes.js";
+import { listarEquipos, eliminarEquipo } from '../modules/equipos.js';
 
 const POR_PAGINA = 6;
 
-const $lista = document.querySelector("#lista-equipos");
-const $plantilla = document.querySelector("#tpl-equipo");
-const $resumen = document.querySelector("#resumen");
-const $paginaActual = document.querySelector("#pagina-actual");
-const $btnAnterior = document.querySelector("#btn-anterior");
-const $btnSiguiente = document.querySelector("#btn-siguiente");
+// Elementos del DOM uwu
+const lista = document.querySelector('#lista-equipos');
+const plantilla = document.querySelector('#tpl-equipo');
+const resumen = document.querySelector('#resumen');
+const indicador = document.querySelector('#pagina-actual');
+const btnAnterior = document.querySelector('#btn-anterior');
+const btnSiguiente = document.querySelector('#btn-siguiente');
+const vacio = document.querySelector('#estado-vacio');
 
 let paginaActual = 1;
-let ultimaPagina = 1;
 
-// YA IMPLEMENTADO — "2026-09-15" -> "15 set 2026"
-export const formatearFecha = (iso) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString("es-CR", { day: "numeric", month: "short", year: "numeric" });
+// Carga la página de equipos y 'pinta' la lista en el DOM
+export async function cargarPagina(pagina = paginaActual) {
+  lista.setAttribute('aria-busy', 'true');
+  try {
+    const { data, meta } = await listarEquipos({ page: pagina, per_page: POR_PAGINA });
+    paginaActual = meta.current_page;
+    pintar(data, meta);
+  } catch (error) {
+    resumen.textContent = error.message;
+  } finally {
+    lista.setAttribute('aria-busy', 'false');
+  }
+}
 
-/**
- * TODO [F2] Listado y paginación.
- *
- * cargarPagina(pagina):
- *  - Marque la lista como ocupada (aria-busy="true") mientras carga y desmárquela al terminar.
- *  - Obtenga la página con listarEquipos(pagina, POR_PAGINA).
- *  - Vacíe la lista y, por cada equipo, clone #tpl-equipo y llene:
- *      .codigo, .nombre, .categoria (nombre de la categoría), .fecha (con formatearFecha)
- *      .estado  -> texto del estado y atributo data-estado="<estado>" (el CSS le da color)
- *      li       -> atributo data-id="<id>"
- *    Use SIEMPRE textContent con los datos de la API (nunca innerHTML).
- *  - Si no hay equipos, muestre un <li class="vacio"> con "No hay equipos registrados."
- *  - #resumen:      "Mostrando <from>–<to> de <total>"
- *  - #pagina-actual: "Página <current_page> de <last_page>"
- *  - Deshabilite #btn-anterior en la primera página y #btn-siguiente en la última.
- *  - Si falla, muestre el error con mostrarMensaje("error", ...).
- */
-export const cargarPagina = async (pagina = 1) => {
-  // TODO
-};
+function pintar(equipos, meta) {
+  lista.replaceChildren(); //replaceChildren() elimina todos los hijos y luego agrega los nuevos, es más eficiente que innerHTML, según la ia de VS.
+  vacio.hidden = equipos.length > 0;
 
-/**
- * TODO [F4] Eliminación con manejo de reglas de negocio.
- *
- * Use DELEGACIÓN DE EVENTOS: un solo listener en $lista que detecte clics en .btn-eliminar.
- *  - Pida confirmación con confirm().
- *  - Llame a eliminarEquipo(id).
- *  - 204: muestre "Equipo eliminado." y recargue la página actual
- *         (si era el último de la página y no es la primera, vaya a la anterior).
- *  - 409: muestre el mensaje que envía la API (error.datos.mensaje).
- *  - Otro error: muestre un mensaje general.
- */
-const alHacerClicEnLista = async (evento) => {
-  // TODO
-};
+  for (const equipo of equipos) {
+    const tarjeta = plantilla.content.cloneNode(true);
+    const item = tarjeta.firstElementChild;
 
-// Parcialmente implementado: complete el TODO de los botones de paginación.
-export const iniciarListado = () => {
-  $lista.addEventListener("click", alHacerClicEnLista);
+    item.dataset.id = equipo.id;
+    item.dataset.estado = equipo.estado;
+    item.querySelector('.codigo').textContent = equipo.codigo;
+    item.querySelector('.nombre').textContent = equipo.nombre;
+    item.querySelector('.estado').textContent = equipo.estado;
+    item.querySelector('.categoria').textContent = equipo.categoria.nombre;
+    item.querySelector('.fecha').textContent = equipo.fecha_adquisicion;
 
-  // TODO [F2] Conecte #btn-anterior y #btn-siguiente con cargarPagina()
+    lista.append(item);
+  }
 
-  cargarPagina(1);
-};
+  resumen.textContent = meta.total
+    ? `Mostrando ${meta.from}–${meta.to} de ${meta.total}`
+    : 'Sin resultados';
+  indicador.textContent = `Página ${meta.current_page} de ${meta.last_page}`;
+  btnAnterior.disabled = meta.current_page <= 1;
+  btnSiguiente.disabled = meta.current_page >= meta.last_page;
+}
+
+btnAnterior.addEventListener('click', () => cargarPagina(paginaActual - 1));
+btnSiguiente.addEventListener('click', () => cargarPagina(paginaActual + 1));
+
+// F4 · Delegación de eventos: un solo listener sobre la lista
+lista.addEventListener('click', async (evento) => {
+  const boton = evento.target.closest('.btn-eliminar');
+  if (!boton) return;
+
+  const tarjeta = boton.closest('[data-id]');
+  if (!confirm('¿Eliminar este equipo?')) return;
+
+  try {
+    await eliminarEquipo(tarjeta.dataset.id);
+    const quedaVacia = lista.children.length === 1 && paginaActual > 1;
+    await cargarPagina(quedaVacia ? paginaActual - 1 : paginaActual);
+  } catch (error) {
+    alert(error.message); // En un 409 es el mensaje que envía la API, parte del backend. En otros casos es un mensaje genérico.
+  }
+});
+
+cargarPagina();
