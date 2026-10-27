@@ -1,6 +1,3 @@
-import { crearEquipo, listarCategorias } from "../modules/equipos.js";
-import { mostrarMensaje } from "./mensajes.js";
-
 /**
  * TODO [F3] Formulario de registro de equipos.
  *
@@ -22,23 +19,22 @@ import { mostrarMensaje } from "./mensajes.js";
  */
 import { ErrorApi } from '../modules/api.js';
 import { crearEquipo, listarCategorias } from '../modules/equipos.js';
-import { cargarPagina } from './listado.js';
+import { cargarPagina, notificar } from './listado.js';
 
 const formulario = document.querySelector('#form-equipo');
 const select = formulario.querySelector('[name="categoria_id"]');
-const boton = formulario.querySelector('button[type="submit"]');
+const boton = formulario.querySelector('#btn-guardar');
 
-// Inicia el formulario del registro de los equipos
-async function cargarCategorias() {
+export async function iniciarFormulario() {
   try {
     const { data } = await listarCategorias();
+    select.options.length = 1; // conserva solo "Seleccione…"
     select.append(...data.map(({ id, nombre }) => new Option(nombre, id)));
   } catch (error) {
-    alert(error.message);
+    notificar(error.message, 'error');
   }
 }
 
-// Método solo para quitar los errores previos del formulario y que no afecten al nuevo envío
 function limpiarErrores() {
   formulario.querySelectorAll('[data-error]').forEach((p) => (p.textContent = ''));
   formulario.querySelectorAll('[aria-invalid]').forEach((c) => c.removeAttribute('aria-invalid'));
@@ -67,17 +63,16 @@ formulario.addEventListener('submit', async (evento) => {
   try {
     await crearEquipo(datos);
     formulario.reset();
+    notificar('Equipo registrado.', 'exito');
     await cargarPagina();
   } catch (error) {
     if (error instanceof ErrorApi && error.estado === 422) {
       mostrarErrores(error.errores);
     } else {
-      alert(error.message);
+      notificar(error.message, 'error');
     }
   } finally {
     boton.disabled = false;
     boton.textContent = textoOriginal;
   }
 });
-
-cargarCategorias();

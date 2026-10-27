@@ -20,23 +20,84 @@
    5. Ningún elemento debe provocar desplazamiento horizontal a 360px de ancho.
    ========================================================================= */
 
+/* Encabezado: puede pasar a dos líneas a 360px */
+.app-header {
+  flex-wrap: wrap;
+}
+
+/* Móvil: una sola columna (formulario arriba, listado abajo) */
 .layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
 .panel-form {
+  min-width: 0;
 }
 
 .panel-listado {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0; /* evita que el contenido ensanche la columna */
 }
 
+/* Barra superior: elementos en los extremos, centrados, puede pasar a 2 líneas */
 .barra-listado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
+/* Tarjetas: tantas columnas como quepan, mínimo 220px, sin media query */
 .lista-equipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
+/* El estado vacío ocupa todo el ancho de la grilla */
+.lista-equipos .vacio {
+  grid-column: 1 / -1;
+}
+
+.tarjeta {
+  min-width: 0;
+  overflow-wrap: anywhere; /* textos largos no desbordan */
+}
+
+/* Paginación: Anterior / indicador / Siguiente */
 .paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
+input,
+select,
+button {
+  max-width: 100%;
+}
+
+/* Escritorio: formulario de 320px + listado con el resto */
 @media (min-width: 900px) {
+  .layout {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  .panel-form {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+  }
 }
