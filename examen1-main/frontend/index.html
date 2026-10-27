@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Control de préstamo de equipos del laboratorio" />
     <title>Préstamo de Equipos · IF0009</title>
+    <link rel="stylesheet" href="./src/base.css" />
   </head>
   <body>
     <header class="app-header">
@@ -20,8 +21,8 @@
 
     <div id="mensajes" class="mensajes" role="status" aria-live="polite"></div>
 
-    <!-- ===================== Vista de inicio de sesión (YA IMPLEMENTADA) ===================== -->
-    <section id="vista-login" class="vista-login" hidden>
+    <!-- ===================== Vista de inicio de sesión ===================== -->
+    <section id="vista-login" class="vista-login">
       <form id="form-login" class="card form-login" novalidate>
         <h2>Iniciar sesión</h2>
         <div class="campo">
@@ -96,7 +97,7 @@
       </section>
     </main>
 
-    <!-- Plantilla de una tarjeta de equipo: clónela con template.content.cloneNode(true) -->
+    <!-- Plantilla de una tarjeta de equipo -->
     <template id="tpl-equipo">
       <li class="tarjeta">
         <div class="tarjeta-cabecera">
@@ -110,6 +111,6 @@
       </li>
     </template>
 
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>
