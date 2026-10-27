@@ -20,36 +20,74 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  *      - Si está en mantenimiento: "No se puede prestar un equipo en mantenimiento."
  *      - Si ya está prestado:     "El equipo ya se encuentra prestado."
  */
+
 class EquipoService
 {
-    /**
+        /**
      * Listado paginado con la categoría cargada de forma anticipada (sin N+1),
      * ordenado por código. Filtros opcionales:
      *  - $q:      busca en código o nombre (coincidencia parcial)
      *  - $estado: filtra por estado exacto
      */
-    public function listar(?string $q, ?string $estado, int $porPagina): LengthAwarePaginator
+    public function listar(?string $q, ?string $estado, int $porPagina = 10): LengthAwarePaginator
     {
-        // TODO
+        return Equipo::with('categoria')
+            ->when($q, fn ($consulta) => $consulta->where(
+                fn ($w) => $w->where('codigo', 'like', "%{$q}%")
+                             ->orWhere('nombre', 'like', "%{$q}%")
+            ))
+            ->when($estado, fn ($consulta) => $consulta->where('estado', $estado))
+            ->orderBy('codigo')
+            ->paginate($porPagina)
+            ->withQueryString();
+    }
+
+    public function obtener(int $id): Equipo
+    {
+        return Equipo::with('categoria')->findOrFail($id);
     }
 
     public function crear(array $datos): Equipo
     {
-        // TODO: devuelva el equipo con la categoría cargada
+        $datos['estado'] ??= 'disponible';
+
+        return Equipo::create($datos)->load('categoria');
     }
 
-    public function actualizar(Equipo $equipo, array $datos): Equipo
+    public function actualizar(int $id, array $datos): Equipo
     {
-        // TODO: devuelva el equipo actualizado con la categoría cargada
+        $equipo = Equipo::findOrFail($id);
+        $equipo->update($datos);
+
+        return $equipo->load('categoria');
     }
 
-    public function eliminar(Equipo $equipo): void
+    public function eliminar(int $id): void
     {
-        // TODO: aplique R1
+        $equipo = Equipo::findOrFail($id);
+
+        // R1
+        if ($equipo->estado === 'prestado') {
+            throw new ReglaNegocioException('No se puede eliminar un equipo prestado.');
+        }
+
+        $equipo->delete();
     }
 
-    public function prestar(Equipo $equipo): Equipo
+    public function prestar(int $id): Equipo
     {
-        // TODO: aplique R2 y cambie el estado a "prestado"
+        $equipo = Equipo::findOrFail($id);
+
+        // R2
+        if ($equipo->estado === 'mantenimiento') {
+            throw new ReglaNegocioException('No se puede prestar un equipo en mantenimiento.');
+        }
+        if ($equipo->estado === 'prestado') {
+            throw new ReglaNegocioException('El equipo ya se encuentra prestado.');
+        }
+
+        $equipo->update(['estado' => 'prestado']);
+
+        return $equipo->load('categoria');
     }
 }
