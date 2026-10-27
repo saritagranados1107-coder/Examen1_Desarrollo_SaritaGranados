@@ -55,16 +55,16 @@ export function iniciarFormulario({ alGuardar }) {
 
     const datos = Object.fromEntries(new FormData($formulario));
     datos.categoria_id = Number(datos.categoria_id);
-    datos.costo_interno = Number(datos.costo_interno);
+    datos.costo_interno = datos.costo_interno === "" ? null : Number(datos.costo_interno);
 
     const textoOriginal = $guardar.textContent;
     $guardar.disabled = true;
     $guardar.textContent = "Guardando…";
 
     try {
-      await crearEquipo(datos);
+      const { data: creado } = await crearEquipo(datos);
       $formulario.reset();
-      mostrarMensaje("exito", "Equipo registrado.");
+      mostrarMensaje("exito", `Equipo ${creado.codigo} registrado.`);
       await alGuardar();
     } catch (error) {
       if (error.status === 422) {

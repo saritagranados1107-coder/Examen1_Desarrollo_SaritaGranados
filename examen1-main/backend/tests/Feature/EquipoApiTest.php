@@ -13,12 +13,6 @@ use Laravel\Sanctum\Sanctum;
 | Ejecute:  php artisan test --filter=EquipoApi
 */
 
-/*
-==== RESULTADOS DE PRUEBAS 1 ====
-  Tests:    2 failed, 1 warning (5 assertions)
-  Duration: 0.75s
-*/
-
 it('crea un equipo y responde 201 con encabezado Location', function () {
     Sanctum::actingAs(User::factory()->create());
     $categoria = Categoria::query()->forceCreate(['nombre' => 'Cómputo']);

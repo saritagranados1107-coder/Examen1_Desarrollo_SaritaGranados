@@ -52,7 +52,7 @@ class EquipoController extends Controller
     {
         $equipo = $this->servicio->crear($request->validated());
 
-        return new EquipoResource($equipo)
+        return (new EquipoResource($equipo))
             ->response()
             ->setStatusCode(201)
             ->header('Location', url("/api/equipos/{$equipo->getKey()}"));
@@ -60,7 +60,7 @@ class EquipoController extends Controller
 
     public function update(GuardarEquipoRequest $request, int $id): EquipoResource
     {
-        return new EquipoResource($this->servicio->actualizar($id, $request->all()));
+        return new EquipoResource($this->servicio->actualizar($id, $request->validated()));
     }
 
     public function destroy(int $id): Response
@@ -70,7 +70,7 @@ class EquipoController extends Controller
         return response()->noContent();
     }
 
-    public function prestamo(int $id): EquipoResource
+    public function prestar(int $id): EquipoResource
     {
         return new EquipoResource($this->servicio->prestar($id));
     }

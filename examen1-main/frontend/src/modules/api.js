@@ -19,22 +19,9 @@ import { obtenerToken, olvidarSesion } from "./auth.js";
  *
  * Ningún otro archivo debe llamar a fetch directamente (salvo auth.js, ya hecho).
  */
-import { obtenerToken, olvidarSesion } from "./auth.js"; // ← verifique estos nombres
-
-const BASE = import.meta.env.VITE_API_URL;
-const TIEMPO_MAXIMO = 8000;
-
-export class ErrorApi extends Error {
-  constructor(status, datos) {
-    super(datos?.mensaje ?? datos?.message ?? `Error ${status}`);
-    this.status = status;
-    this.datos = datos;
-  }
-}
-
 export async function request(ruta, { body, headers = {}, ...opciones } = {}) {
   const controlador = new AbortController();
-  const temporizador = setTimeout(() => controlador.abort(), TIEMPO_MAXIMO);
+  const temporizador = setTimeout(() => controlador.abort(), TIEMPO_MAXIMO_MS);
 
   const encabezados = { Accept: "application/json", ...headers };
   const token = obtenerToken();
@@ -42,7 +29,7 @@ export async function request(ruta, { body, headers = {}, ...opciones } = {}) {
   if (body !== undefined) encabezados["Content-Type"] = "application/json";
 
   try {
-    const respuesta = await fetch(`${BASE}${ruta}`, {
+    const respuesta = await fetch(`${BASE_URL}${ruta}`, {
       ...opciones,
       headers: encabezados,
       body: body !== undefined ? JSON.stringify(body) : undefined,
