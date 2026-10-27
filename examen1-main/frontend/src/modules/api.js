@@ -19,29 +19,27 @@ import { obtenerToken, olvidarSesion } from "./auth.js";
  *
  * Ningún otro archivo debe llamar a fetch directamente (salvo auth.js, ya hecho).
  */
+import { obtenerToken, olvidarSesion } from "./auth.js"; // ← verifique estos nombres
+
 const BASE = import.meta.env.VITE_API_URL;
 const TIEMPO_MAXIMO = 8000;
 
 export class ErrorApi extends Error {
-  constructor(estado, datos) {
-    super(datos?.mensaje ?? datos?.message ?? `Error ${estado}`);
-    this.estado = estado;
+  constructor(status, datos) {
+    super(datos?.mensaje ?? datos?.message ?? `Error ${status}`);
+    this.status = status;
     this.datos = datos;
-    this.errores = datos?.errors ?? {};
   }
 }
-
-export const obtenerToken = () => localStorage.getItem('token'); 
-export const olvidarSesion = () => localStorage.removeItem('token');
 
 export async function request(ruta, { body, headers = {}, ...opciones } = {}) {
   const controlador = new AbortController();
   const temporizador = setTimeout(() => controlador.abort(), TIEMPO_MAXIMO);
 
-  const encabezados = { Accept: 'application/json', ...headers };
+  const encabezados = { Accept: "application/json", ...headers };
   const token = obtenerToken();
   if (token) encabezados.Authorization = `Bearer ${token}`;
-  if (body !== undefined) encabezados['Content-Type'] = 'application/json';
+  if (body !== undefined) encabezados["Content-Type"] = "application/json";
 
   try {
     const respuesta = await fetch(`${BASE}${ruta}`, {
@@ -58,15 +56,15 @@ export async function request(ruta, { body, headers = {}, ...opciones } = {}) {
     if (!respuesta.ok) {
       if (respuesta.status === 401) {
         olvidarSesion();
-        location.reload();
+        window.location.reload();
       }
       throw new ErrorApi(respuesta.status, datos);
     }
 
     return datos;
   } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new ErrorApi(0, { mensaje: 'La petición tardó demasiado. Intente de nuevo.' });
+    if (error.name === "AbortError") {
+      throw new ErrorApi(0, { mensaje: "La petición tardó demasiado. Intente de nuevo." });
     }
     throw error;
   } finally {

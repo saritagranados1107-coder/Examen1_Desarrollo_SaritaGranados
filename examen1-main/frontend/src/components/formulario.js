@@ -17,62 +17,64 @@
  *     - Otro error: mostrarMensaje("error", ...).
  *     - Siempre (finally): rehabilite el botón y restaure su texto.
  */
-import { ErrorApi } from '../modules/api.js';
-import { crearEquipo, listarCategorias } from '../modules/equipos.js';
-import { cargarPagina, notificar } from './listado.js';
+import { crearEquipo, listarCategorias } from "../modules/equipos.js";
+import { mostrarMensaje } from "./mensajes.js";
 
-const formulario = document.querySelector('#form-equipo');
-const select = formulario.querySelector('[name="categoria_id"]');
-const boton = formulario.querySelector('#btn-guardar');
+const $formulario = document.querySelector("#form-equipo");
+const $categoria = $formulario.querySelector("[name='categoria_id']");
+const $guardar = document.querySelector("#btn-guardar");
 
-export async function iniciarFormulario() {
+async function cargarCategorias() {
   try {
     const { data } = await listarCategorias();
-    select.options.length = 1; // conserva solo "Seleccione…"
-    select.append(...data.map(({ id, nombre }) => new Option(nombre, id)));
+    $categoria.append(...data.map(({ id, nombre }) => new Option(nombre, id)));
   } catch (error) {
-    notificar(error.message, 'error');
+    mostrarMensaje("error", error.message);
   }
 }
 
 function limpiarErrores() {
-  formulario.querySelectorAll('[data-error]').forEach((p) => (p.textContent = ''));
-  formulario.querySelectorAll('[aria-invalid]').forEach((c) => c.removeAttribute('aria-invalid'));
+  $formulario.querySelectorAll("[data-error]").forEach(($p) => ($p.textContent = ""));
+  $formulario.querySelectorAll("[aria-invalid]").forEach(($c) => $c.removeAttribute("aria-invalid"));
 }
 
-function mostrarErrores(errores) {
-  for (const [campo, mensajes] of Object.entries(errores)) {
-    const parrafo = formulario.querySelector(`[data-error="${campo}"]`);
-    if (parrafo) parrafo.textContent = mensajes[0];
-    formulario.querySelector(`[name="${campo}"]`)?.setAttribute('aria-invalid', 'true');
+function mostrarErrores(errores = {}) {
+  for (const [campo, [mensaje]] of Object.entries(errores)) {
+    const $error = $formulario.querySelector(`[data-error="${campo}"]`);
+    if ($error) $error.textContent = mensaje;
+    $formulario.querySelector(`[name="${campo}"]`)?.setAttribute("aria-invalid", "true");
   }
 }
 
-formulario.addEventListener('submit', async (evento) => {
-  evento.preventDefault();
-  limpiarErrores();
+export function iniciarFormulario({ alGuardar }) {
+  cargarCategorias();
 
-  const datos = Object.fromEntries(new FormData(formulario));
-  datos.categoria_id = Number(datos.categoria_id);
-  datos.costo_interno = Number(datos.costo_interno);
+  $formulario.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    limpiarErrores();
 
-  const textoOriginal = boton.textContent;
-  boton.disabled = true;
-  boton.textContent = 'Guardando…';
+    const datos = Object.fromEntries(new FormData($formulario));
+    datos.categoria_id = Number(datos.categoria_id);
+    datos.costo_interno = Number(datos.costo_interno);
 
-  try {
-    await crearEquipo(datos);
-    formulario.reset();
-    notificar('Equipo registrado.', 'exito');
-    await cargarPagina();
-  } catch (error) {
-    if (error instanceof ErrorApi && error.estado === 422) {
-      mostrarErrores(error.errores);
-    } else {
-      notificar(error.message, 'error');
+    const textoOriginal = $guardar.textContent;
+    $guardar.disabled = true;
+    $guardar.textContent = "Guardando…";
+
+    try {
+      await crearEquipo(datos);
+      $formulario.reset();
+      mostrarMensaje("exito", "Equipo registrado.");
+      await alGuardar();
+    } catch (error) {
+      if (error.status === 422) {
+        mostrarErrores(error.datos?.errors);
+      } else {
+        mostrarMensaje("error", error.message);
+      }
+    } finally {
+      $guardar.disabled = false;
+      $guardar.textContent = textoOriginal;
     }
-  } finally {
-    boton.disabled = false;
-    boton.textContent = textoOriginal;
-  }
-});
+  });
+}
